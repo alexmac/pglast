@@ -11,7 +11,7 @@
 from . cimport structs
 from . import Error
 
-from cpython.bytes cimport PyBytes_AsStringAndSize, PyBytes_FromStringAndSize
+from cpython.bytes cimport PyBytes_AS_STRING, PyBytes_FromStringAndSize, PyBytes_GET_SIZE
 from cpython.list cimport PyList_New, PyList_SET_ITEM
 from libc cimport limits
 from libc.stdint cimport int32_t, uint64_t, uint8_t
@@ -60,7 +60,7 @@ cdef extern from "pg_query.h" nogil:
         PgQueryError *error
 
     ctypedef struct PgQueryProtobuf:
-        unsigned int len
+        size_t len
         char* data
 
     ctypedef struct PgQueryProtobufParseResult:
@@ -520,7 +520,7 @@ def deparse_protobuf(bytes protobuf,
                                                         trailing_newline=trailing_newline,
                                                         commas_start_of_line=commas_start_of_line)
 
-    PyBytes_AsStringAndSize(protobuf, &tree.data, <Py_ssize_t *>&tree.len)
+    tree.data, tree.len = PyBytes_AS_STRING(protobuf), <size_t> PyBytes_GET_SIZE(protobuf)
     with nogil:
         deparsed = pg_query_deparse_protobuf_opts(tree, opts)
 

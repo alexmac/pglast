@@ -7,6 +7,8 @@
 #
 
 import json
+import re
+from pathlib import Path
 
 import pytest
 
@@ -274,6 +276,23 @@ def test_deparse_protobuf():
     assert deparse_protobuf(parse_sql_protobuf('select 1')) == 'SELECT 1'
     assert deparse_protobuf(parse_sql_protobuf('select 1 from (select 2)'), True) \
         == 'SELECT 1\nFROM\n    (\n        SELECT 2\n    )'
+
+
+def test_pg_query_protobuf_len_type_matches_header():
+    root = Path(__file__).parent.parent
+    parser_source = root / 'pglast' / 'parser.pyx'
+    header = root / 'libpg_query' / 'pg_query.h'
+    if not parser_source.exists() or not header.exists():
+        pytest.skip('source tree required for ABI declaration check')
+
+    assert re.search(
+        r'ctypedef struct PgQueryProtobuf:\n\s+size_t len\n\s+char\* data',
+        parser_source.read_text(encoding='utf-8'),
+    )
+    assert re.search(
+        r'typedef struct \{\n\s+size_t len;\n\s+char\* data;\n\} PgQueryProtobuf;',
+        header.read_text(encoding='utf-8'),
+    )
 
 
 def test_parse_sql_json():
