@@ -262,6 +262,12 @@ cdef class Displacements:
         return offset
 
 
+cdef bytes _utf8_query(str query):
+    if '\0' in query:
+        raise ValueError('embedded null byte')
+    return query.encode('utf-8')
+
+
 def get_postgresql_version():
     "Return the ``PostgreSQL`` version as a tuple (`major`, `minor`)."
 
@@ -278,7 +284,7 @@ def parse_sql(str query):
     cdef int i
     cdef const char *cstring
 
-    utf8 = query.encode('utf-8')
+    utf8 = _utf8_query(query)
     offset_to_index = Displacements(query)
     cstring = utf8
 
@@ -310,7 +316,7 @@ def parse_sql_json(str query):
     cdef PgQueryParseResult parsed
     cdef const char *cstring
 
-    utf8 = query.encode('utf-8')
+    utf8 = _utf8_query(query)
     cstring = utf8
 
     with nogil:
@@ -334,7 +340,7 @@ def parse_sql_protobuf(str query):
     cdef PgQueryProtobufParseResult parsed
     cdef const char *cstring
 
-    utf8 = query.encode('utf-8')
+    utf8 = _utf8_query(query)
     cstring = utf8
 
     with nogil:
@@ -359,7 +365,7 @@ def parse_plpgsql_json(str query):
     cdef PgQueryPlpgsqlParseResult parsed
     cdef const char *cstring
 
-    utf8 = query.encode('utf-8')
+    utf8 = _utf8_query(query)
     cstring = utf8
 
     with nogil:
@@ -383,7 +389,7 @@ def fingerprint(str query):
     cdef PgQueryFingerprintResult result
     cdef const char *cstring
 
-    utf8 = query.encode('utf-8')
+    utf8 = _utf8_query(query)
     cstring = utf8
 
     with nogil:
@@ -424,7 +430,7 @@ def split(str stmts, bint with_parser=True, bint only_slices=False):
     cdef Py_ssize_t leading_whitespace
     cdef Py_ssize_t end_index
 
-    utf8 = stmts.encode('utf-8')
+    utf8 = _utf8_query(stmts)
     cstring = utf8
 
     with nogil:
@@ -474,7 +480,7 @@ def comments(str query):
     cdef const char *cstring
     cdef size_t i = 0
 
-    utf8 = query.encode('utf-8')
+    utf8 = _utf8_query(query)
     offset_to_index = Displacements(query)
     cstring = utf8
 
@@ -549,7 +555,7 @@ def scan(str query):
     cdef const char* cstring
     cdef size_t i
 
-    utf8 = query.encode('utf-8')
+    utf8 = _utf8_query(query)
     offset_to_index = Displacements(query)
     cstring = utf8
 

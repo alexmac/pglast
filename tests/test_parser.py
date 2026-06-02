@@ -20,6 +20,7 @@ from pglast.parser import comments
 from pglast.parser import deparse_protobuf
 from pglast.parser import fingerprint
 from pglast.parser import get_postgresql_version
+from pglast.parser import parse_plpgsql_json
 from pglast.parser import parse_sql_json
 from pglast.parser import parse_sql_protobuf
 from pglast.parser import scan
@@ -37,6 +38,21 @@ def test_parse_sql():
     assert len(ptree) == 1
     rawstmt = ptree[0]
     assert isinstance(rawstmt, ast.RawStmt)
+
+
+@pytest.mark.parametrize('parser', (
+    parse_sql,
+    parse_sql_json,
+    parse_sql_protobuf,
+    parse_plpgsql_json,
+    fingerprint,
+    split,
+    comments,
+    scan,
+))
+def test_embedded_null_byte(parser):
+    with pytest.raises(ValueError, match='embedded null byte'):
+        parser('select 1\0select 2')
 
 
 def test_parse_plpgsql():
