@@ -227,7 +227,7 @@ cdef class Displacements:
     # tuple with an offset less than or equal the given offset.
 
     cdef tuple displacements
-    cdef unsigned long max_offset
+    cdef long max_offset
 
     def __init__(self, str s):
         cdef unsigned long idx = 0
@@ -245,7 +245,7 @@ cdef class Displacements:
             else:
                 ofs += 1
             idx += 1
-        self.max_offset = ofs - 1
+        self.max_offset = <long> ofs - 1
         self.displacements = tuple(reversed(disps))
 
     def __call__(self, offset):

@@ -132,6 +132,14 @@ def test_unicode():
     assert target.name == "Naïve"
 
 
+def test_empty_displacements():
+    displacements = Displacements('')
+
+    assert displacements(-1) is None
+    assert displacements(0) is None
+    assert displacements(1) is None
+
+
 def test_locations_fixup():
     sql = 'SELECT 1 AS "Naïve" /* there is an  "ı" with a  \u0308 above */ FROM somewhere'
 
