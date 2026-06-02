@@ -542,7 +542,7 @@ def scan(str query):
     "Lexify the given ``SQL`` `query` and return a list of its lexical tokens."
 
     cdef PgQueryScanResult scanned
-    cdef PgQuery__ScanResult* scan_result
+    cdef PgQuery__ScanResult* scan_result = NULL
     cdef PgQuery__ScanToken* scan_token
     cdef const ProtobufCEnumValue* tkind
     cdef const ProtobufCEnumValue* kwkind
@@ -564,24 +564,28 @@ def scan(str query):
         with nogil:
             scan_result = pg_query__scan_result__unpack(NULL, scanned.pbuf.len,
                                                         <uint8_t*> scanned.pbuf.data)
+        if scan_result == NULL:
+            raise MemoryError()
 
-        result = PyList_New(scan_result.n_tokens)
+        try:
+            result = PyList_New(scan_result.n_tokens)
 
-        for i in range(scan_result.n_tokens):
-            scan_token = scan_result.tokens[i]
-            tkind = protobuf_c_enum_descriptor_get_value(&pg_query__token__descriptor,
-                                                         scan_token.token)
-            kwkind = protobuf_c_enum_descriptor_get_value(&pg_query__keyword_kind__descriptor,
-                                                          scan_token.keyword_kind)
+            for i in range(scan_result.n_tokens):
+                scan_token = scan_result.tokens[i]
+                tkind = protobuf_c_enum_descriptor_get_value(&pg_query__token__descriptor,
+                                                             scan_token.token)
+                kwkind = protobuf_c_enum_descriptor_get_value(&pg_query__keyword_kind__descriptor,
+                                                              scan_token.keyword_kind)
 
-            token = Token(offset_to_index(scan_token.start), offset_to_index(scan_token.end-1),
-                          tkind.name.decode('ascii') if tkind != NULL else "UNKNOWN",
-                          kwkind.name.decode('ascii'))
-            Py_INCREF(token)
-            PyList_SET_ITEM(result, i, token)
+                token = Token(offset_to_index(scan_token.start), offset_to_index(scan_token.end-1),
+                              tkind.name.decode('ascii') if tkind != NULL else "UNKNOWN",
+                              kwkind.name.decode('ascii'))
+                Py_INCREF(token)
+                PyList_SET_ITEM(result, i, token)
 
-        with nogil:
-            pg_query__scan_result__free_unpacked(scan_result, NULL)
+        finally:
+            with nogil:
+                pg_query__scan_result__free_unpacked(scan_result, NULL)
     finally:
         with nogil:
             pg_query_free_scan_result(scanned)

@@ -10,6 +10,7 @@ import json
 
 import pytest
 
+import pglast.parser as parser
 from pglast import Error
 from pglast import ast
 from pglast import parse_plpgsql
@@ -248,6 +249,15 @@ def test_scan():
                       ( 8,  8, 'IDENT',    'NO_KEYWORD'),        # noqa E201
                       (10, 10, 'ICONST',   'NO_KEYWORD')]
     assert sql[result[1].start] == '\\'
+
+
+def test_scan_frees_unpacked_result_on_token_error(monkeypatch):
+    def raise_on_token(*args):
+        raise RuntimeError('token construction failed')
+
+    monkeypatch.setattr(parser, 'Token', raise_on_token)
+    with pytest.raises(RuntimeError, match='token construction failed'):
+        scan('select 1')
 
 
 def test_comments():
